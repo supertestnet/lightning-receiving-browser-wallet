@@ -240,6 +240,7 @@
 		}
 
 		function pushBTCpmtWithoutAlert( rawtx ) {
+				console.log( "Ok I am about to broadcast this:", rawtx );
 		        var xhttp = new XMLHttpRequest();
 		        xhttp.onreadystatechange = function() {
 		                if ( this.readyState == 4 && ( this.status == 200 || this.status == 201 ) ) {
@@ -656,7 +657,7 @@
 			  }
 			}
 			psbt.finalizeInput( 0, getFinalScripts );
-			setTimeout( function() {pushBTCpmtWithoutAlert( psbt.extractTransaction().toHex() );console.log( psbt.extractTransaction().toHex() );}, 1000 );
+			setTimeout( function() {console.log( psbt.extractTransaction().toHex() );pushBTCpmtWithoutAlert( psbt.extractTransaction().toHex() );}, 1000 );
 		}
 		function prepLightning() {
 			if ( document.getElementById( "address-qr" ).style.display != "none" ) {
@@ -703,6 +704,8 @@
 					localStorage[ "ln_withdrawal_objects" ] = JSON.stringify( withdrawal_objects );
 					if ( document.getElementById( "ln_checkbox" ).checked ) {
 						document.getElementById( "ln_checkbox" ).click();
+						document.getElementsByClassName( "home-button" )[ 0 ].click();
+						setTimeout( function() {alert( "Your transaction was received and your balance should update in a few seconds. Sometimes it takes up to twenty seconds to update." );}, 2000 );
 					}
 					withdrawFromHtlcWithPreimage( txid, txindex, original_quantity_of_sats, new_quantity_of_sats, serverPrivkey, serverPubkey, userPubkey, preimage, timelock, useraddress );
 				}
