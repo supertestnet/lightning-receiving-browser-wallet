@@ -1075,7 +1075,10 @@
 			var serverinfo = await getSwapInfo( url );
 			serverinfo = JSON.parse( JSON.parse( serverinfo ) );
 			var serverinvoice = serverinfo[ "invoice" ];
-			console.log( serverinvoice );
+			console.log( "invoice", serverinvoice );
+			if ( !serverinvoice ) {
+				document.getElementById( "receive-money-button" ).click();
+			}
 			var expandedserverinvoice = JSON.parse( decode( serverinfo[ "invoice" ] ) );
 			var invoice_amt = expandedserverinvoice[ "satoshis" ];
 			var invoicetags = expandedserverinvoice[ "tags" ];
@@ -1121,6 +1124,8 @@
 					document.getElementById( "ln_checkbox" ).click();
 					document.getElementsByClassName( "home-button" )[ 0 ].click();
 				}
+			} else {
+				document.getElementById( "receive-money-button" ).click();
 			}
 		});
 		if ( !localStorage[ "last_unused_preimage" ] ) {
