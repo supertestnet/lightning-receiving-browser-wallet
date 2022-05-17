@@ -11,6 +11,8 @@ Go here: https://supertestnet.github.io/lightning-receiving-browser-wallet/lnwal
 
 Be aware that it's a weird hybrid of mainnet and testnet, with the lightning part on mainnet. You will lose money if you send real sats to it in its current state because I will keep your mainnet sats and send you testnet sats at almost 1:1 parity. Also, I don't have very many testnet sats, so it will probably break pretty quickly if a lot of people play with it.
 
+Oh yeah and there's no support for *sending* money to lightning invoices, right now you can only *receive* money using a lightning invoice. So don't even try putting a lightning invoice into the "send" tab, it won't do anything because it doesn't even know how to parse a lightning invoice.
+
 # How it works
 
 When you click to receive a lightning payment in this wallet, you'll see a lightning invoice, but it's not *your* lightning invoice. If any payment is sent to that invoice, the LSP can delay it for a few hours or ignore it altogether. But the LSP cannot settle the invoice and take the money -- not without a piece of text that you have. The piece of text is called a preimage.
