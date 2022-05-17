@@ -467,7 +467,7 @@
 		        var new_adjusted_utxos_in_this_transaction = new_array[ 1 ];
 		        new_amount_plus_fee = new_array[ 2 ];
 		        var new_change_amount = new_array[ 3 ];
-		        if( new_array[ 3 ] && ( !change_address || change_address == "none" ) && new_array[ 5 ] ) {
+		        if( Number( new_array[ 3 ] ) >= 250 && ( !change_address || change_address == "none" ) && new_array[ 5 ] ) {
 		        	var change_address = await getFirstUnusedChangeAddress();
 		        }
 		        var new_txhex = craftTransaction( new_adjusted_utxos_in_this_transaction, toamount, toaddress, change_address, new_change_amount, sats_per_byte );
