@@ -5,6 +5,12 @@ It's basically the same as [this project](https://github.com/supertestnet/vanill
 
 Big caveat: this wallet is not a *real* lightning wallet. It *fakes it* by trusting a lightning service provider (LSP). The LSP is in a trusted position that some consider custodial, so make sure you trust him or her before using this wallet.
 
+# How to use it
+
+Go here: https://supertestnet.github.io/lightning-receiving-browser-wallet/lnwallet.html
+
+Be aware that it's a weird hybrid of mainnet and testnet, with the lightning part on mainnet. You will lose money if you send real sats to it in its current state because I will keep your mainnet sats and send you testnet sats at almost 1:1 parity. Also, I don't have very many testnet sats, so it will probably break pretty quickly if a lot of people play with it.
+
 # How it works
 
 When you click to receive a lightning payment in this wallet, you'll see a lightning invoice, but it's not *your* lightning invoice. If any payment is sent to that invoice, the LSP can delay it for a few hours or ignore it altogether. But the LSP cannot settle the invoice and take the money -- not without a piece of text that you have. The piece of text is called a preimage.
