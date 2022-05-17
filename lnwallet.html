@@ -317,9 +317,10 @@
 		        }
 		}
 
-		function addUtxosToTx( amount_plus_fee, utxos_available_for_this_transaction, utxos_in_this_transaction, sats_per_byte, this_addition_is_being_done_because_of_a_change_address = false ) {
+		function addUtxosToTx( amount_plus_fee, utxos_available_for_this_transaction, utxos_in_this_transaction, sats_per_byte, this_addition_is_being_done_because_of_a_change_address = false, this_addition_is_being_done_after_the_total_transaction_size_is_known = false, total_transaction_size = 0, to_amount ) {
 		        var original_utxos_available_for_this_transaction = JSON.stringify( utxos_available_for_this_transaction );
 		        var original_utxos_in_this_transaction = JSON.stringify( utxos_in_this_transaction );
+		        var original_amount_plus_fee = amount_plus_fee;
 		        console.log( "amount plus fee:", amount_plus_fee );
 		        console.log( "utxos available for this transaction:", utxos_available_for_this_transaction );
 		        console.log( "utxos in this transaction:", utxos_in_this_transaction );
@@ -337,8 +338,10 @@
 		                console.log( "largest_utxo_indexnum", largest_utxo_indexnum );
 		                console.log( "value of largest utxo", utxos_available_for_this_transaction[ largest_utxo_indexnum ][ "amount" ] );
 		                utxos_in_this_transaction.push( utxos_available_for_this_transaction.splice( largest_utxo_indexnum, 1 )[ 0 ] );
-		                amount_plus_fee = amount_plus_fee + ( 50 * sats_per_byte );
-		                console.log( "the new amount_plus_fee, accounting for the new inputs, is", amount_plus_fee );
+		                if ( !this_addition_is_being_done_after_the_total_transaction_size_is_known ) {
+		                	amount_plus_fee = amount_plus_fee + ( 50 * sats_per_byte );
+			                console.log( "the new amount_plus_fee, accounting for the new inputs, is", amount_plus_fee );
+		            	}
 		                console.log( "number of utxos in this transaction", utxos_in_this_transaction.length );
 		                var sum_of_the_values_of_each_input_to_this_transaction = 0;
 		                var i; for ( i=0; i<utxos_in_this_transaction.length; i++ ) {
@@ -349,23 +352,33 @@
 		                        console.log( "the sum of the values of each input to this transaction is", sum_of_the_values_of_each_input_to_this_transaction );
 		                }
 		                if ( sum_of_the_values_of_each_input_to_this_transaction < amount_plus_fee ) {
-		                        console.log( "the sum of the values of each input to this transaction, i.e.", sum_of_the_values_of_each_input_to_this_transaction, "was less than the amount we need in the inputs, i.e.", amount_plus_fee, "so we need to run this function again with a higher amount_plus_fee value" );
-		                        return addUtxosToTx( amount_plus_fee, utxos_available_for_this_transaction, utxos_in_this_transaction, sats_per_byte, false );
+		                        console.log( "the sum of the values of each input to this transaction, i.e.", sum_of_the_values_of_each_input_to_this_transaction, "was less than the amount we need in the inputs, i.e.", amount_plus_fee, "so we need to run this function again with a higher amount_plus_fee value (the previous one was", original_amount_plus_fee, "so that this function knows we need more inputs" );
+		                        return addUtxosToTx( amount_plus_fee, utxos_available_for_this_transaction, utxos_in_this_transaction, sats_per_byte, false, this_addition_is_being_done_after_the_total_transaction_size_is_known, total_transaction_size, to_amount );
 		                } else {
 		                        if ( !this_addition_is_being_done_because_of_a_change_address ) {
-		                                var change_amount = sum_of_the_values_of_each_input_to_this_transaction - amount_plus_fee;
+		                        		if ( total_transaction_size > 0 ) {
+			                                var change_amount = sum_of_the_values_of_each_input_to_this_transaction - ( to_amount + ( total_transaction_size * sats_per_byte ) );
+		                        		} else {
+			                                var change_amount = sum_of_the_values_of_each_input_to_this_transaction - amount_plus_fee;
+		                        		}
 		                                console.log( "the sum of the values of each input to this transaction is", sum_of_the_values_of_each_input_to_this_transaction );
 		                                console.log( "amount plus fee", amount_plus_fee );
-		                                console.log( "the change amount should be the first number minus the second number, i.e.", change_amount );
-		                                console.log( "there is change left over, namely", change_amount, "-- so we have to check if that is more than the dust limit" );
-		                                if ( change_amount >= ( 250 + 50 * sats_per_byte ) ) {
-		                                        console.log( "the change amount --", change_amount, "-- is more than the dust limit, which is 250 + 50 * sats_per_byte i.e.", ( 250 + 50 * sats_per_byte ), "so we have to redo steps 4-9 with a new amount_plus_fee of the previous amount_plus_fee plus 50*sats_per_byte, i.e.", amount_plus_fee + 50*sats_per_byte, "but we have to keep the old values of utxos_available_for_this_transaction and utxos_in_this_transaction" );
+		                                console.log( "the change amount should be one of two values, either the first number minus the second number, i.e.", sum_of_the_values_of_each_input_to_this_transaction - amount_plus_fee, "or the first number minus the to_amount minus the total transaction size -- as long as I know it, currently it is thought to be", total_transaction_size, "and if that number is 0 it just means I do not know it -- multiplied by the sats_per_byte value, which is", sats_per_byte, "for a total of", sum_of_the_values_of_each_input_to_this_transaction - ( to_amount + ( total_transaction_size * sats_per_byte ) ) );
+		                                if ( change_amount > 0 ) {
+			                                console.log( "there is change left over, namely", change_amount, "-- so we have to check if that is more than the dust limit" );
+			                            } else {
+			                            	console.log( "there is no change left over so I do not need a change output, yay!" );
+			                            }
+		                                if ( change_amount >= 250 ) {
+		                                        console.log( "the change amount --", change_amount, "-- is equal to or more than the dust limit of this wallet, which is 250. (It used to be 250 + 50 * sats_per_byte i.e.", ( 250 + 50 * sats_per_byte ), "because I added some to the dust limit so that the change amount would not go lower than the dust limit once I add another output, but this caused problems and 250 is already a bit high anyway so I put it back to just 250.) So I have to redo steps 4-9. I used to use a new amount_plus_fee of the previous amount_plus_fee plus 50*sats_per_byte, i.e.", original_amount_plus_fee + 50*sats_per_byte, "because I figured the transaction size would have to rise by about 50 bytes, but it causes problems so now I am redoing it without changing anything. Also I have to remember to use the old values of utxos_available_for_this_transaction and utxos_in_this_transaction" );
 		                                        var we_need_a_change_address = true;
-		                                        new_amount_plus_fee = amount_plus_fee + ( 50*sats_per_byte );
+//		                                        new_amount_plus_fee = original_amount_plus_fee + ( 50*sats_per_byte );
+		                                        new_amount_plus_fee = original_amount_plus_fee;
 		                                        console.log( "original utxos available:", JSON.parse( original_utxos_available_for_this_transaction ) );
 		                                        console.log( "original utxos in this tx:", JSON.parse( original_utxos_in_this_transaction ) );
-		                                        return addUtxosToTx( new_amount_plus_fee, JSON.parse( original_utxos_available_for_this_transaction ), JSON.parse( original_utxos_in_this_transaction ), sats_per_byte, true );
+		                                        return addUtxosToTx( new_amount_plus_fee, JSON.parse( original_utxos_available_for_this_transaction ), JSON.parse( original_utxos_in_this_transaction ), sats_per_byte, true, this_addition_is_being_done_after_the_total_transaction_size_is_known, total_transaction_size, to_amount );
 		                                } else {
+		                                		console.log( "there is a small possibility that this was mentioned earlier (if he change output was exactly equal to 0), but in case it was not, be aware that there is no change output because the change amount was lower than my dust threshhold and will therefore be dropped. That is good because it means I am using my coins efficiently and saving on fees" );
 		                                        var we_need_a_change_address = false;
 		                                }
 		                                console.log( "sum of the values of each input to this transaction", sum_of_the_values_of_each_input_to_this_transaction );
@@ -380,7 +393,12 @@
 		                                array[ 5 ] = this_addition_is_being_done_because_of_a_change_address;
 		                                return array;
 		                        } else {
-		                                var change_amount = sum_of_the_values_of_each_input_to_this_transaction - amount_plus_fee;
+		                        		if ( total_transaction_size > 0 ) {
+			                                var change_amount = sum_of_the_values_of_each_input_to_this_transaction - ( to_amount + ( total_transaction_size * sats_per_byte ) );
+		                        		} else {
+			                                var change_amount = sum_of_the_values_of_each_input_to_this_transaction - amount_plus_fee;
+		                        		}
+		                        		console.log( "ok this is part of the change path, my change value is", change_amount );
 		                                var array = [];
 		                                array[ 0 ] = utxos_available_for_this_transaction;
 		                                array[ 1 ] = utxos_in_this_transaction;
@@ -388,7 +406,8 @@
 		                                array[ 3 ] = change_amount;
 		                                array[ 4 ] = "the next field is true if we need a change address";
 		                                array[ 5 ] = this_addition_is_being_done_because_of_a_change_address;
-		                                return array;                                
+		                                console.log( "I need a change address, right?", array[ 5 ] );
+		                                return array;
 		                        }
 		                }
 		        }
@@ -407,8 +426,16 @@
 		        }
 		        var original_utxos_available_for_this_transaction = JSON.stringify( utxos_available_for_this_transaction );
 		        var original_utxos_in_this_transaction = JSON.stringify( utxos_in_this_transaction );
-		        var array = addUtxosToTx( amount_plus_fee, utxos_available_for_this_transaction, utxos_in_this_transaction, sats_per_byte, false );
-		        var adjusted_utxos_available_for_this_transaction = array[ 0 ];
+		        var array = addUtxosToTx( amount_plus_fee, utxos_available_for_this_transaction, utxos_in_this_transaction, sats_per_byte, false, false, 0, toamount );
+		        if ( array[ 0 ] && array[ 1 ] && array[ 2 ] && array[ 3 ] && array[ 4 ] && array[ 5 ] ) {
+			        var adjusted_utxos_available_for_this_transaction = array[ 0 ];
+			        var adjusted_utxos_in_this_transaction = array[ 1 ];
+			        amount_plus_fee = array[ 2 ];
+			    } else {
+			    	var adjusted_utxos_available_for_this_transaction = [];
+			        var adjusted_utxos_in_this_transaction = [];
+			        amount_plus_fee = 0;
+			    }
 		        var adjusted_utxos_in_this_transaction = array[ 1 ];
 		        amount_plus_fee = array[ 2 ];
 		        if ( array[ 5 ] ) {
@@ -432,18 +459,24 @@
 		        console.log( original_utxos_available_for_this_transaction );
 		        console.log( JSON.parse( original_utxos_available_for_this_transaction ) );
 		        console.log( "I will also check what the original utxos in the transaction are", JSON.parse( original_utxos_in_this_transaction ) );
-		        var new_array = addUtxosToTx( new_amount_plus_fee, JSON.parse( original_utxos_available_for_this_transaction ), JSON.parse( original_utxos_in_this_transaction ), sats_per_byte, false );
+		        console.log( "Ok I am about to rerun addUtxosToTx with the new fee in mind. The most important variable for this is new_amount_plus_fee, which is the amount I am sending,", toamount, "plus a variable where the number of actual bytes in this transaction, i.e.", virtual_bytes, "is multiplied by the sats per byte value, i.e.", sats_per_byte, "to give a result of", real_fee, "which I add to my to_amount to get a total new_amount_plus_fee of", new_amount_plus_fee );
+		        console.log([0]);
+		        var new_array = addUtxosToTx( new_amount_plus_fee, JSON.parse( original_utxos_available_for_this_transaction ), JSON.parse( original_utxos_in_this_transaction ), sats_per_byte, false, true, virtual_bytes, toamount );
+				console.log( "I need a change address, right? (This should be at least the second time I am asking this)", new_array[ 5 ] );
 		        var new_adjusted_utxos_available_for_this_transaction = new_array[ 0 ];
 		        var new_adjusted_utxos_in_this_transaction = new_array[ 1 ];
 		        new_amount_plus_fee = new_array[ 2 ];
 		        var new_change_amount = new_array[ 3 ];
+		        if( new_array[ 3 ] && ( !change_address || change_address == "none" ) && new_array[ 5 ] ) {
+		        	var change_address = await getFirstUnusedChangeAddress();
+		        }
 		        var new_txhex = craftTransaction( new_adjusted_utxos_in_this_transaction, toamount, toaddress, change_address, new_change_amount, sats_per_byte );
 		        console.log( new_txhex );
 		        var new_tx = bitcoinjs.Transaction.fromHex( new_txhex );
 		        var new_virtual_bytes = tx.virtualSize();
 		        if ( new_virtual_bytes == virtual_bytes ) {
 		                console.log( "yay! The transaction is ready and here is its hex:", new_txhex );
-		                pushBTCpmt( new_txhex );
+		                //pushBTCpmt( new_txhex );
 		        } else {
 		                alert( "I tried to craft your transaction twice and I kept getting errors. Please contact the developer of this wallet for assistance." );
 		        }
