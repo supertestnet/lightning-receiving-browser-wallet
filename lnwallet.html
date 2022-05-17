@@ -476,7 +476,7 @@
 		        var new_virtual_bytes = tx.virtualSize();
 		        if ( new_virtual_bytes == virtual_bytes ) {
 		                console.log( "yay! The transaction is ready and here is its hex:", new_txhex );
-		                //pushBTCpmt( new_txhex );
+		                pushBTCpmt( new_txhex );
 		        } else {
 		                alert( "I tried to craft your transaction twice and I kept getting errors. Please contact the developer of this wallet for assistance." );
 		        }
