@@ -679,17 +679,20 @@
 			return decoded.replace( /\n/g, '' );
 		}
 		async function lightningLoop() {
+			var acceptable_swap_fee = Number( sessionStorage[ "acceptable_swap_fee" ] );
+			var mining_fee_for_preimage_path = Number( sessionStorage[ "mining_fee_for_preimage_path" ] );
 			var withdrawal_objects = JSON.parse( localStorage.ln_withdrawal_objects );
 			withdrawal_objects.forEach( async function( item, index ) {
 				var address = item[ "data" ][ "htlc-address" ];
 				var balance = await getAddressBalance( address );
 				balance = Number( balance );
 				console.log( "running the loop" );
-				if ( balance == item[ "data" ][ "amount" ] ) {
+				if ( balance >= item[ "data" ][ "amount" ] - acceptable_swap_fee ) {
 					var txid = await getIdOfTxThatSentMeMoney( address );
 					var txindex = await getOutputNumberOfTxThatSentMeMoney( address, txid );
-					var original_quantity_of_sats = Number( item[ "data" ][ "amount" ] );
-					var new_quantity_of_sats = Number( original_quantity_of_sats ) - 175;
+					var original_quantity_of_sats = await getAddressBalance( item[ "data" ][ "htlc-address" ] );
+					original_quantity_of_sats = Number( original_quantity_of_sats );
+					var new_quantity_of_sats = Number( original_quantity_of_sats ) - mining_fee_for_preimage_path;
 					var serverPrivkey = item[ "data" ][ "privkey" ];
 					var serverPubkey = getCompressedPubkeyHexFromPrivkeyHex( serverPrivkey );
 					var userPubkey = item[ "data" ][ "server" ];
@@ -1039,6 +1042,7 @@
 			var serverinfo = await getSwapInfo( url );
 			serverinfo = JSON.parse( JSON.parse( serverinfo ) );
 			var serverinvoice = serverinfo[ "invoice" ];
+			console.log( serverinvoice );
 			var expandedserverinvoice = JSON.parse( decode( serverinfo[ "invoice" ] ) );
 			var invoice_amt = expandedserverinvoice[ "satoshis" ];
 			var invoicetags = expandedserverinvoice[ "tags" ];
@@ -1055,26 +1059,35 @@
 			console.log( "invoice payment hash:", invoice_pmthash );
 			console.log( "cltv:", invoice_min_cltv_expiry );
 			var p2wsh = bitcoinjs.payments.p2wsh({redeem: {output: generateHtlcWithUserTimelocked( userPubkey, serverinfo[ "server pubkey" ], pmthash, timelock ), network: bitcoinjs.networks.testnet}, network: bitcoinjs.networks.testnet });
-			if ( p2wsh.address == serverinfo[ "htlc address" ] && invoice_pmthash == sha256hash && invoice_min_cltv_expiry >= 40 && Number( invoice_amt ) == Number( amount ) ) {
-				var lightning_withdrawal_object = {}
-				lightning_withdrawal_object[ "sha256hash" ] = sha256hash;
-				lightning_withdrawal_object[ "data" ] = {};
-				lightning_withdrawal_object[ "data" ][ "privkey" ] = userPrivkey;
-				lightning_withdrawal_object[ "data" ][ "preimage-index" ] = index;
-				lightning_withdrawal_object[ "data" ][ "preimage" ] = preimage;
-				lightning_withdrawal_object[ "data" ][ "timelock" ] = timelock;
-				lightning_withdrawal_object[ "data" ][ "sha256hash" ] = sha256hash;
-				lightning_withdrawal_object[ "data" ][ "pmthash" ] = pmthash;
-				lightning_withdrawal_object[ "data" ][ "amount" ] = amount;
-				lightning_withdrawal_object[ "data" ][ "htlc-address" ] = p2wsh.address;
-				lightning_withdrawal_object[ "data" ][ "server" ] = serverinfo[ "server pubkey" ];
-				lightning_withdrawal_object[ "data" ][ "invoice" ] = serverinfo[ "invoice" ];
-				var ln_withdrawal_objects = JSON.parse( localStorage[ "ln_withdrawal_objects" ] );
-				ln_withdrawal_objects.push( lightning_withdrawal_object );
-				localStorage[ "ln_withdrawal_objects" ] = JSON.stringify( ln_withdrawal_objects );
-				document.getElementById( "invoice" ).innerText = serverinfo[ "invoice" ];
-				document.getElementById( "invoice-qr" ).innerText = "";
-				document.getElementById( "invoice-qr" ).append( createQR( "lightning:" + serverinfo[ "invoice" ] ) );
+			var acceptable_swap_fee = Number( sessionStorage[ "acceptable_swap_fee" ] );
+			var mining_fee_for_preimage_path = Number( sessionStorage[ "mining_fee_for_preimage_path" ] );
+			if ( p2wsh.address == serverinfo[ "htlc address" ] && invoice_pmthash == sha256hash && invoice_min_cltv_expiry >= 40 && Number( invoice_amt ) >= Number( amount ) - acceptable_swap_fee ) {
+				var confirm_message = "Due to service fees of at most " + acceptable_swap_fee.toString() + " sats and a mining fee of " + mining_fee_for_preimage_path.toString() + " sats, you will not receive the full amount of your invoice. The invoice you are about to create will get you " + ( ( Number( invoice_amt ) - acceptable_swap_fee ) - mining_fee_for_preimage_path ).toString() + " sats or more at current mining prices. Please confirm if you are okay with receiving that amount (at minimum -- it might be more), otherwise you can cancel this invoice.";
+				if ( confirm( confirm_message ) ) {
+					var lightning_withdrawal_object = {}
+					lightning_withdrawal_object[ "sha256hash" ] = sha256hash;
+					lightning_withdrawal_object[ "data" ] = {};
+					lightning_withdrawal_object[ "data" ][ "privkey" ] = userPrivkey;
+					lightning_withdrawal_object[ "data" ][ "preimage-index" ] = index;
+					lightning_withdrawal_object[ "data" ][ "preimage" ] = preimage;
+					lightning_withdrawal_object[ "data" ][ "timelock" ] = timelock;
+					lightning_withdrawal_object[ "data" ][ "sha256hash" ] = sha256hash;
+					lightning_withdrawal_object[ "data" ][ "pmthash" ] = pmthash;
+					lightning_withdrawal_object[ "data" ][ "amount" ] = amount;
+					lightning_withdrawal_object[ "data" ][ "htlc-address" ] = p2wsh.address;
+					lightning_withdrawal_object[ "data" ][ "server" ] = serverinfo[ "server pubkey" ];
+					lightning_withdrawal_object[ "data" ][ "invoice" ] = serverinfo[ "invoice" ];
+					lightning_withdrawal_object[ "data" ][ "expected_final_amount" ] = ( ( Number( invoice_amt ) - acceptable_swap_fee ) - mining_fee_for_preimage_path ).toString();
+					var ln_withdrawal_objects = JSON.parse( localStorage[ "ln_withdrawal_objects" ] );
+					ln_withdrawal_objects.push( lightning_withdrawal_object );
+					localStorage[ "ln_withdrawal_objects" ] = JSON.stringify( ln_withdrawal_objects );
+					document.getElementById( "invoice" ).innerText = serverinfo[ "invoice" ];
+					document.getElementById( "invoice-qr" ).innerText = "";
+					document.getElementById( "invoice-qr" ).append( createQR( "lightning:" + serverinfo[ "invoice" ] ) );
+				} else {
+					document.getElementById( "ln_checkbox" ).click();
+					document.getElementsByClassName( "home-button" )[ 0 ].click();
+				}
 			}
 		});
 		if ( !localStorage[ "last_unused_preimage" ] ) {
@@ -1087,6 +1100,8 @@
 			var array = [];
 			localStorage[ "ln_withdrawal_objects" ] = JSON.stringify( array );
 		}
+		sessionStorage[ "acceptable_swap_fee" ] = 500;
+		sessionStorage[ "mining_fee_for_preimage_path" ] = 175;
 		lightningLoop();
 	</script>
 </body>
