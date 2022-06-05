@@ -11,6 +11,9 @@
 	<script src="https://bundle.run/bip39@3.0.4"></script>
 	<script src="https://bundle.run/bip32@2.0.6"></script>
 	<script src="https://bundle.run/buffer@6.0.3"></script>
+	<link rel="preconnect" href="https://fonts.googleapis.com">
+	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+	<link href="https://fonts.googleapis.com/css2?family=Roboto+Mono&display=swap" rel="stylesheet">
 	<script>
 		function computeRawPrivkey( node ) {
 		        return bitcoinjs.ECPair.fromPrivateKey( node.privateKey, { network: bitcoinjs.networks.testnet } ).__D.toString( "hex" );
@@ -702,7 +705,7 @@
 				document.getElementById( "address-line" ).style.display = "block";
 				document.getElementById( "ln-popup" ).style.display = "none";
 				document.getElementById( "invoice-qr" ).style.display = "none";
-				document.getElementById( "invoice-qr" ).innerHTML = '<img src="https://i.gifer.com/origin/34/34338d26023e5515f6cc8969aa027bca_w200.gif" style="width: 100%; max-width: 300px; height: 300px;" />';
+				document.getElementById( "invoice-qr" ).innerHTML = '<img src="https://i.gifer.com/origin/34/34338d26023e5515f6cc8969aa027bca_w200.gif" style="width: 75%; max-width: 200px; height: 200px;" />';
 				document.getElementById( "invoice-line" ).style.display = "none";
 				document.getElementById( "invoice" ).innerText = "";
 			}
@@ -760,14 +763,15 @@
 		html, body {
 			height: 100%;
 			margin: 0px;
+			font-family: 'Roboto Mono', monospace;
 		}
 		#wallet {
 			position: relative;
-			border: 1px solid black;
-			width: 100%;
+			border: 2px solid black;
+			width: 95%;
 			max-width: 500px;
 			min-height: 900px;
-			margin: auto;
+			margin: 3% auto;
 			border-radius: 20px;
 			text-align: center;
 			padding: 10px;
@@ -775,10 +779,16 @@
 		#wallet-home {
 		}
 		#balance-line {
-			display: inline-block;
+			display: flex;
+			flex-direction: row;
+			justify-content: center;
 			max-height: 25px;
 			height: 25px;
 			margin-bottom: 5px;
+		}
+		#balance {
+			display: flex;
+			flex-direction: row;
 		}
 		#denomination {
 			display: none;
@@ -786,10 +796,11 @@
 		#backup-line {
 			display: none;
 			position: absolute;
-			bottom: 10px;
+			bottom: 5%;
 			width: 95%;
 			margin: auto;
 			border: 1px solid black;
+			box-shadow: 0 3px 6px rgba(0,0,0,0.16), 0 3px 6px rgba(0,0,0,0.23);
 		}
 		#backup-instructions {
 			text-decoration: underline;
@@ -839,10 +850,10 @@
 		.slider {
 			position: absolute;
 		    cursor: pointer;
-		    top: 0;
+		    top: 4px;
 	        left: 0;
 	        right: 0;
-	        bottom: 0;
+	        bottom: -4px;
             border-radius: 17px;
             background-color: #ccc;
             -webkit-transition: .4s;
@@ -860,6 +871,101 @@
 		    -webkit-transition: .4s;
 		    transition: .4s;
 		}
+		.send-button {
+			display: inline-block;
+			width: 20%;
+			margin: 3% auto;
+			outline: none;
+			cursor: pointer;
+			font-weight: 600;
+			border-radius: 3px;
+			padding: 1%;
+			border: 0;
+			color: #fff;
+			background: #ff5000;
+			line-height: 1.15;
+			font-size: 16px;
+		}
+		.send-button:hover {
+			transition: all .1s ease;
+			box-shadow: 0 0 0 0 #fff, 0 0 0 3px #2196F3;			
+		}
+		.receive-button {
+			display: inline-block;
+			width: 20%;
+			margin: 3% auto;
+			outline: none;
+			cursor: pointer;
+			font-weight: 600;
+			border-radius: 3px;
+			padding: 1%;
+			border: 0;
+			color: #fff;
+			background: #ff5000;
+			line-height: 1.15;
+			font-size: 16px;
+		}
+		.receive-button:hover {
+			transition: all .1s ease;
+			box-shadow: 0 0 0 0 #fff, 0 0 0 3px #2196F3;			
+		}
+		.home-button {
+			display: inline-block;
+			width: 25%;
+			margin: 3% auto;
+			outline: none;
+			cursor: pointer;
+			font-weight: 600;
+			border-radius: 3px;
+			padding: 1%;
+			border: 0;
+			color: #fff;
+			background: #2196F3;
+			line-height: 1.15;
+			font-size: 16px;
+		}
+		.home-button:hover {
+			transition: all .1s ease;
+			box-shadow: 0 0 0 0 #fff, 0 0 0 3px #ff5000;			
+		}
+		#send-money-button {
+			display: inline-block;
+			width: 20%;
+			margin: 3% auto;
+			outline: none;
+			cursor: pointer;
+			font-weight: 600;
+			border-radius: 3px;
+			padding: 1%;
+			border: 0;
+			color: #fff;
+			background: #ff5000;
+			line-height: 1.15;
+			font-size: 16px;
+		}
+		#send-money-button:hover {
+			transition: all .1s ease;
+			box-shadow: 0 0 0 0 #fff, 0 0 0 3px #2196F3;			
+		}
+		#receive-money-button {
+			display: inline-block;
+			width: 20%;
+			margin: 3% auto;
+			outline: none;
+			cursor: pointer;
+			font-weight: 600;
+			border-radius: 3px;
+			padding: 1%;
+			border: 0;
+			color: #fff;
+			background: #ff5000;
+			line-height: 1.15;
+			font-size: 16px;
+		}
+		#receive-money-button:hover {
+			transition: all .1s ease;
+			box-shadow: 0 0 0 0 #fff, 0 0 0 3px #2196F3;			
+		}
 		input:checked + .slider {
 		  	background-color: #2196F3;
 		}
@@ -871,12 +977,28 @@
 		    -ms-transform: translateX(13px);
 		    transform: translateX(13px);
 		}
+		#receive-amount-input {
+			width: 60%;
+			padding: 1%;
+			border-radius: 5px;
+		}
+		#send-address-input {
+			padding: 1%;
+			border-radius: 5px;
+		}
+		#send-amount-input {
+			padding: 1%;
+			border-radius: 5px;
+		}
 		#ln-popup {
 			display: none;
-			margin-top: 10px;
-			margin-bottom: 10px;
+			width: 90%;
+			margin: 0 auto;
+			margin-top: 8%;
+			margin-bottom: 8%;
 			border: 1px solid black;
 			border-radius: 20px;
+			box-shadow: 0 19px 38px rgba(0,0,0,0.30), 0 15px 12px rgba(0,0,0,0.22);
 		}
 		#base-layer-or-lightning-toggle {
 			margin-top: 10px;
@@ -902,9 +1024,10 @@
 	<div id="wallet">
 		<div id="home-tab">
 			<div id="balance-label">
-				Balance
+				&#8383alance
 			</div>
 			<div id="balance-line">
+				<p>&#9889</p>
 				<span id="balance">
 					<img src="https://i.gifer.com/origin/34/34338d26023e5515f6cc8969aa027bca_w200.gif" style="width: 100%; max-width: 25px; height: 25px;" />
 				</span> <span id="denomination">sats</span>
@@ -924,13 +1047,14 @@
 		</div>
 		<div id="receive-tab">
 			<div id="receive-label">
+
 				Receive
 			</div>
 			<div id="base-layer-or-lightning-toggle">
 				Use Lightning? <label class="switch"><input id="ln_checkbox" type="checkbox" onclick="prepLightning();"><span class="slider"></span></label>
 			</div>
 			<div id="address-qr">
-				<img src="https://i.gifer.com/origin/34/34338d26023e5515f6cc8969aa027bca_w200.gif" style="width: 100%; max-width: 300px; height: 300px;" />
+				<img src="https://i.gifer.com/origin/34/34338d26023e5515f6cc8969aa027bca_w200.gif" style="width: 75%; max-width: 200px; height: 200px;" />
 			</div>
 			<div id="address-line">
 				<span id="address">
@@ -946,7 +1070,7 @@
 				</p>
 			</div>
 			<div id="invoice-qr">
-				<img src="https://i.gifer.com/origin/34/34338d26023e5515f6cc8969aa027bca_w200.gif" style="width: 100%; max-width: 300px; height: 300px;" />
+				<img src="https://i.gifer.com/origin/34/34338d26023e5515f6cc8969aa027bca_w200.gif" style="width: 75%; max-width: 200px; height: 200px;" />
 			</div>
 			<div id="invoice-line">
 				<span id="invoice">
